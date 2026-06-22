@@ -216,15 +216,9 @@ Este projeto é um trabalho acadêmico.
 ## 👨‍💻 Autor
 
 **Natan**  
-Curso: ubd  
+Curso: Análise e Desenvolvimento de Sistemas - FAETERJ RIO
+Disciplina: 4UBD
 Data: 2026
 
 ---
-
-## 📸 Screenshots
-
-*(Adicione prints do dashboard, formulário e banco de dados aqui na hora de enviar)*
-
----
-
 **Repositório:** [GitHub Link](seu-repo-link)
