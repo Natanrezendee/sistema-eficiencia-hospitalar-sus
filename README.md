@@ -217,7 +217,9 @@ Este projeto é um trabalho acadêmico.
 
 **Natan**  
 Curso: Análise e Desenvolvimento de Sistemas - FAETERJ RIO
+
 Disciplina: 4UBD
+
 Data: 2026
 
 ---
