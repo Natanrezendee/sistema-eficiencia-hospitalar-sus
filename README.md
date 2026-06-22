@@ -217,10 +217,8 @@ Este projeto é um trabalho acadêmico.
 
 **Natan**  
 Curso: Análise e Desenvolvimento de Sistemas - FAETERJ RIO
-
 Disciplina: 4UBD
-
 Data: 2026
 
 ---
-**Repositório:** [GitHub Link](seu-repo-link)
+**Repositório:** [GitHub Link]([seu-repo-link](https://github.com/Natanrezendee/sistema-eficiencia-hospitalar-sus))
