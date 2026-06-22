@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ acao }} Atendimento - SUS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <style>
+        body {
+            background: linear-gradient(rgba(240, 244, 248, 0.88), rgba(240, 244, 248, 0.88)), 
+                        url('/static/background.jpg') no-repeat center center fixed;
+            background-size: cover;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+        .card {
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+        .form-control, .form-select {
+            border-radius: 8px;
+            border: 1px solid #cbd5e1;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: #0d6efd;
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+        }
+        .transition-all {
+            transition: all 0.3s ease-in-out;
+        }
+        .alert-container {
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5 mb-5" style="max-width: 850px;">
+        {% if erro %}
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                <strong>Erro:</strong> {{ erro }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+            </div>
+        {% endif %}
+
+        <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="card-header bg-primary text-white p-4 d-flex align-items-center justify-content-between">
+                <div>
+                    <h4 class="mb-0 fw-bold"><i class="bi bi-file-earmark-medical me-2"></i>{{ acao }} Registro de Atendimento</h4>
+                    <p class="mb-0 text-white-50 small mt-1">Sistema de Eficiência Hospitalar - SUS</p>
+                </div>
+                <i class="bi bi-shield-check fs-1 opacity-50"></i>
+            </div>
+            <div class="card-body p-4 bg-white bg-opacity-95">
+                <form method="POST" id="formAtendimento">
+
+                    <h5 class="text-primary border-bottom pb-2 mb-3"><i class="bi bi-person-vcard me-2"></i>Dados do Paciente</h5>
+                    <div class="row g-3 mb-4">
+                        
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-secondary">Nome Completo *</label>
+                            <input type="text" name="paciente_nome" class="form-control" placeholder="Nome do paciente" value="{{ at.nome_paciente if at else '' }}" required {% if at %}readonly{% endif %}>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-secondary">CPF (sem pontos) *</label>
+                            <input type="text" name="paciente_cpf" class="form-control" placeholder="11999999999" maxlength="11" value="{{ at.cpf if at else '' }}" required {% if at %}readonly{% endif %}>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-secondary">CNS (Cartão Nacional de Saúde) *</label>
+                            <input type="text" name="paciente_cns" class="form-control" placeholder="000000000000000" maxlength="15" value="{{ at.cns if at else '' }}" required {% if at %}readonly{% endif %}>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-secondary">Data de Nascimento *</label>
+                            <input type="date" name="paciente_data_nascimento" class="form-control" value="{{ at.data_nascimento_html if at else '' }}" required {% if at %}readonly{% endif %}>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-secondary">Sexo *</label>
+                            <select name="paciente_sexo" class="form-select" required {% if at %}disabled{% endif %}>
+                                <option value="" disabled {% if not at %}selected{% endif %}>Selecione...</option>
+                                <option value="M" {% if at and at.sexo == 'M' %}selected{% endif %}>Masculino</option>
+                                <option value="F" {% if at and at.sexo == 'F' %}selected{% endif %}>Feminino</option>
+                                <option value="Outro" {% if at and at.sexo == 'Outro' %}selected{% endif %}>Outro</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-secondary">Telefone</label>
+                            <input type="tel" name="paciente_telefone" class="form-control" placeholder="(11) 99999-9999" value="{{ at.telefone if at else '' }}" {% if at %}readonly{% endif %}>
+                        </div>
+                    </div>
+
+                    <h5 class="text-primary border-bottom pb-2 mb-3"><i class="bi bi-hospital me-2"></i>Identificação Geral</h5>
+                    <div class="row g-3 mb-4">
+                        
+                        <div class="col-md-6">
+                            <div class="d-flex gap-2 align-items-end">
+                                <div style="flex: 1;">
+                                    <label class="form-label fw-semibold text-secondary">Unidade Hospitalar *</label>
+                                    <select name="id_hospital" id="select_hospital" class="form-select" required>
+                                        <option value="" disabled {% if not at %}selected{% endif %}>Selecione o Hospital...</option>
+                                        {% for h in hospitais %}
+                                            <option value="{{ h.id_hospital }}" {% if at and at.id_hospital|int == h.id_hospital|int %}selected{% endif %}>{{ h.nome }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <button type="button" class="btn btn-outline-success btn-sm rounded-3 px-3 mb-0" data-bs-toggle="modal" data-bs-target="#modalCriarHospital" title="Cadastrar novo hospital">
+                                    <i class="bi bi-plus-lg"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="d-flex gap-2 align-items-end">
+                                <div style="flex: 1;">
+                                    <label class="form-label fw-semibold text-secondary">Médico Responsável *</label>
+                                    <select name="id_medico" id="select_medico" class="form-select" required>
+                                        <option value="" disabled {% if not at %}selected{% endif %}>Selecione o Médico...</option>
+                                        {% for m in medicos %}
+                                            <option value="{{ m.id_medico }}" {% if at and at.id_medico|int == m.id_medico|int %}selected{% endif %}>{{ m.nome }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <button type="button" class="btn btn-outline-success btn-sm rounded-3 px-3 mb-0" data-bs-toggle="modal" data-bs-target="#modalCriarMedico" title="Cadastrar novo médico">
+                                    <i class="bi bi-plus-lg"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h5 class="text-primary border-bottom pb-2 mb-3"><i class="bi bi-box-arrow-in-right me-2"></i>Admissão e Protocolo de Manchester</h5>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-secondary">Data e Hora de Entrada *</label>
+                            <input type="datetime-local" name="data_hora_entrada" class="form-control" value="{{ at.entrada_html if at else data_atual }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-secondary">Classificação de Risco (Triagem) *</label>
+                            <select name="triagem" class="form-select" required>
+                                <option value="Azul" {% if at and at.triagem == 'Azul' %}selected{% endif %}>Azul (Não Urgente)</option>
+                                <option value="Verde" {% if at and at.triagem == 'Verde' %}selected{% endif %}>Verde (Pouco Urgente)</option>
+                                <option value="Amarelo" {% if at and at.triagem == 'Amarelo' %}selected{% endif %}>Amarelo (Urgente)</option>
+                                <option value="Laranja" {% if at and at.triagem == 'Laranja' %}selected{% endif %}>Laranja (Muito Urgente)</option>
+                                <option value="Vermelho" {% if at and at.triagem == 'Vermelho' %}selected{% endif %}>Vermelho (Emergência)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold text-secondary">Principais Queixas e Sintomas *</label>
+                        <textarea name="sintomas" class="form-control" rows="2" placeholder="Descreva de forma sucinta o estado clínico inicial..." required>{{ at.sintomas if at else '' }}</textarea>
+                    </div>
+
+                    <h5 class="text-primary border-bottom pb-2 mb-3"><i class="bi bi-clipboard2-pulse me-2"></i>Evolução e Encerramento do Caso</h5>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-secondary">Desfecho do Atendimento *</label>
+                            <select name="desfecho" id="situacao_saida" class="form-select" onchange="verificarObito()" required>
+                                <option value="Alta médica" {% if at and at.desfecho == 'Alta médica' %}selected{% endif %}>Alta médica</option>
+                                <option value="Evasão" {% if at and at.desfecho == 'Evasão' %}selected{% endif %}>Evasão</option>
+                                <option value="Transferência" {% if at and at.desfecho == 'Transferência' %}selected{% endif %}>Transferência</option>
+                                <option value="Óbito" {% if at and at.desfecho == 'Óbito' %}selected{% endif %}>Óbito</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-secondary">Diagnóstico Final (Código CID) *</label>
+                            <input type="text" name="diagnostico" class="form-control" placeholder="Exemplo: CID I21.9" value="{{ at.diagnostico if at else '' }}" required>
+                        </div>
+                    </div>
+
+                    <div id="secaoObito" class="p-3 mb-4 rounded-3 border transition-all">
+                        <h6 class="text-danger fw-bold mb-3"><i class="bi bi-exclamation-octagon-fill me-2"></i>Dados Epidemiológicos de Mortalidade</h6>
+                        <div class="row g-3">
+                            <div class="col-md-7">
+                                <label class="form-label text-dark small fw-medium">Causa Primária do Óbito</label>
+                                <input type="text" id="causa_obito" name="causa_obito" class="form-control" placeholder="Causa detalhada constante na declaração" value="{{ at.causa_obito if at else '' }}">
+                            </div>
+                            <div class="col-md-5">
+                                <label class="form-label text-dark small fw-medium">Data e Hora do Falecimento</label>
+                                <input type="datetime-local" id="data_obito" name="data_obito" class="form-control" value="{{ at.obito_html if at else '' }}">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 border-top pt-3">
+                        <a href="/" class="btn btn-light border fw-medium px-4 rounded-3">Voltar ao Painel</a>
+                        <button type="submit" class="btn btn-primary px-4 fw-bold rounded-3 shadow-sm">Confirmar e Salvar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL CRIAR HOSPITAL -->
+    <div class="modal fade" id="modalCriarHospital" tabindex="-1" aria-labelledby="modalCriarHospitalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0">
+                <div class="modal-header bg-success text-white border-0">
+                    <h5 class="modal-title" id="modalCriarHospitalLabel"><i class="bi bi-hospital me-2"></i>Cadastrar Novo Hospital</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <form id="formCriarHospital" onsubmit="enviarFormularioHospital(event)">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Nome do Hospital *</label>
+                            <input type="text" name="hospital_nome" class="form-control" placeholder="Ex: Hospital São João" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">CNPJ (sem pontos) *</label>
+                            <input type="text" name="hospital_cnpj" class="form-control" placeholder="00000000000000" maxlength="14" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Cidade *</label>
+                            <input type="text" name="hospital_cidade" class="form-control" placeholder="Ex: Rio de Janeiro" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Endereço *</label>
+                            <input type="text" name="hospital_endereco" class="form-control" placeholder="Ex: Rua das Flores, 123" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Capacidade de Leitos *</label>
+                            <input type="number" name="hospital_capacidade" class="form-control" placeholder="Ex: 150" min="1" required>
+                        </div>
+                        <div id="erroHospital" class="alert alert-danger d-none" role="alert"></div>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-light border flex-grow-1" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-success flex-grow-1" id="btnEnviarHospital">Cadastrar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL CRIAR MÉDICO -->
+    <div class="modal fade" id="modalCriarMedico" tabindex="-1" aria-labelledby="modalCriarMedicoLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0">
+                <div class="modal-header bg-info text-white border-0">
+                    <h5 class="modal-title" id="modalCriarMedicoLabel"><i class="bi bi-person-badge me-2"></i>Cadastrar Novo Médico</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <form id="formCriarMedico" onsubmit="enviarFormularioMedico(event)">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Nome do Médico *</label>
+                            <input type="text" name="medico_nome" class="form-control" placeholder="Ex: Dr. João Silva" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">CRM (sem pontos) *</label>
+                            <input type="text" name="medico_crm" class="form-control" placeholder="Ex: 123456789" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Especialidade</label>
+                            <input type="text" name="medico_especialidade" class="form-control" placeholder="Ex: Cardiologia">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Telefone</label>
+                            <input type="tel" name="medico_telefone" class="form-control" placeholder="Ex: (21) 99999-9999">
+                        </div>
+                        <div id="erroMedico" class="alert alert-danger d-none" role="alert"></div>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-light border flex-grow-1" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-info flex-grow-1" id="btnEnviarMedico">Cadastrar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function verificarObito() {
+            var situacao = document.getElementById("situacao_saida").value;
+            var secao = document.getElementById("secaoObito");
+            var inputCausa = document.getElementById("causa_obito");
+            var inputData = document.getElementById("data_obito");
+
+            if (situacao === "Óbito") {
+                secao.className = "p-3 mb-4 rounded-3 border bg-danger-subtle border-danger-subtle text-danger shadow-sm transition-all";
+                inputCausa.required = true;
+                inputData.required = true;
+                inputCausa.disabled = false;
+                inputData.disabled = false;
+            } else {
+                secao.className = "p-3 mb-4 rounded-3 border bg-light text-muted opacity-50 transition-all";
+                inputCausa.required = false;
+                inputData.required = false;
+                inputCausa.value = "";
+                inputData.value = "";
+                inputCausa.disabled = true;
+                inputData.disabled = true;
+            }
+        }
+       
+        window.onload = verificarObito;
+
+        
+        function enviarFormularioHospital(event) {
+            event.preventDefault();
+            const form = document.getElementById('formCriarHospital');
+            const formData = new FormData(form);
+            const btnEnviar = document.getElementById('btnEnviarHospital');
+            const erroDiv = document.getElementById('erroHospital');
+            
+            btnEnviar.disabled = true;
+            btnEnviar.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Cadastrando...';
+            erroDiv.classList.add('d-none');
+
+            fetch('/criar_hospital', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.sucesso) {
+                   
+                    const select = document.getElementById('select_hospital');
+                    const option = document.createElement('option');
+                    option.value = data.id;
+                    option.text = data.nome;
+                    option.selected = true;
+                    select.appendChild(option);
+                    
+                    
+                    bootstrap.Modal.getInstance(document.getElementById('modalCriarHospital')).hide();
+                    form.reset();
+                    btnEnviar.disabled = false;
+                    btnEnviar.innerHTML = 'Cadastrar';
+                } else {
+                    erroDiv.textContent = data.erro || 'Erro ao cadastrar hospital';
+                    erroDiv.classList.remove('d-none');
+                    btnEnviar.disabled = false;
+                    btnEnviar.innerHTML = 'Cadastrar';
+                }
+            })
+            .catch(error => {
+                erroDiv.textContent = 'Erro ao conectar com o servidor';
+                erroDiv.classList.remove('d-none');
+                btnEnviar.disabled = false;
+                btnEnviar.innerHTML = 'Cadastrar';
+            });
+        }
+
+        function enviarFormularioMedico(event) {
+            event.preventDefault();
+            const form = document.getElementById('formCriarMedico');
+            const formData = new FormData(form);
+            const btnEnviar = document.getElementById('btnEnviarMedico');
+            const erroDiv = document.getElementById('erroMedico');
+            
+            btnEnviar.disabled = true;
+            btnEnviar.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Cadastrando...';
+            erroDiv.classList.add('d-none');
+
+            fetch('/criar_medico', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.sucesso) {
+            
+                    const select = document.getElementById('select_medico');
+                    const option = document.createElement('option');
+                    option.value = data.id;
+                    option.text = data.nome;
+                    option.selected = true;
+                    select.appendChild(option);
+                    
+                    bootstrap.Modal.getInstance(document.getElementById('modalCriarMedico')).hide();
+                    form.reset();
+                    btnEnviar.disabled = false;
+                    btnEnviar.innerHTML = 'Cadastrar';
+                } else {
+                    erroDiv.textContent = data.erro || 'Erro ao cadastrar médico';
+                    erroDiv.classList.remove('d-none');
+                    btnEnviar.disabled = false;
+                    btnEnviar.innerHTML = 'Cadastrar';
+                }
+            })
+            .catch(error => {
+                erroDiv.textContent = 'Erro ao conectar com o servidor';
+                erroDiv.classList.remove('d-none');
+                btnEnviar.disabled = false;
+                btnEnviar.innerHTML = 'Cadastrar';
+            });
+        }
+    </script>
+</body>
+</html>
